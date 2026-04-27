@@ -14,6 +14,7 @@
 
         <activity android:name=".OtpActivity" />
         <activity android:name=".ChatListActivity" />
+        <activity android:name=".ChatActivity" />
         <activity
             android:name=".LoginActivity"
             android:exported="true">
