@@ -3,34 +3,50 @@ package com.example.newchatapp;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
 
-import java.util.ArrayList;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class ChatListActivity extends AppCompatActivity {
 
-    RecyclerView chatRecyclerView;
-    ArrayList<ChatUser> userList;
-    ChatUserAdapter adapter;
+    BottomNavigationView bottomNavigation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_list);
 
-        chatRecyclerView = findViewById(R.id.chatRecyclerView);
+        bottomNavigation = findViewById(R.id.bottomNavigation);
 
-        userList = new ArrayList<>();
+        // Default fragment
+        loadFragment(new MessagesFragment());
 
-        // Dummy users
-        userList.add(new ChatUser("Rahul", "Hey bro", "10:30 AM"));
-        userList.add(new ChatUser("Priya", "See you soon", "11:15 AM"));
-        userList.add(new ChatUser("Aman", "Call me", "Yesterday"));
+        bottomNavigation.setOnItemSelectedListener(item -> {
 
-        adapter = new ChatUserAdapter(this, userList);
+            Fragment selectedFragment = null;
 
-        chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        chatRecyclerView.setAdapter(adapter);
+            if (item.getItemId() == R.id.messages) {
+                selectedFragment = new MessagesFragment();
+            }
+            else if (item.getItemId() == R.id.calls) {
+                selectedFragment = new CallsFragment();
+            }
+            else if (item.getItemId() == R.id.profile) {
+                selectedFragment = new ProfileFragment();
+            }
+
+            return loadFragment(selectedFragment);
+        });
+    }
+
+    private boolean loadFragment(Fragment fragment) {
+        if (fragment != null) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.frameLayout, fragment)
+                    .commit();
+            return true;
+        }
+        return false;
     }
 }

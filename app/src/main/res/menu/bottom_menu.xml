@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/messages"
+        android:title="Messages" />
+
+    <item
+        android:id="@+id/calls"
+        android:title="Calls" />
+
+    <item
+        android:id="@+id/profile"
+        android:title="Profile" />
+
+</menu>
