@@ -1,6 +1,7 @@
 package com.example.newchatapp;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -15,6 +16,21 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Check if already logged in
+        SharedPreferences preferences =
+                getSharedPreferences("loginPrefs", MODE_PRIVATE);
+
+        boolean isLoggedIn =
+                preferences.getBoolean("isLoggedIn", false);
+
+        if (isLoggedIn) {
+            Intent intent = new Intent(LoginActivity.this, ChatListActivity.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_login);
 
         phoneNumber = findViewById(R.id.phoneNumber);
@@ -23,7 +39,7 @@ public class LoginActivity extends AppCompatActivity {
         sendOtpBtn.setOnClickListener(v -> {
             String number = phoneNumber.getText().toString().trim();
 
-            if(number.isEmpty()) {
+            if (number.isEmpty()) {
                 phoneNumber.setError("Enter Mobile Number");
                 return;
             }
