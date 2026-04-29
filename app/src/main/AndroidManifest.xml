@@ -15,8 +15,11 @@
         <activity android:name=".OtpActivity" />
         <activity android:name=".ChatListActivity" />
         <activity android:name=".ChatActivity" />
+        <activity android:name=".SetupProfileActivity" />
+        <activity android:name=".LoginActivity" />
+
         <activity
-            android:name=".LoginActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
