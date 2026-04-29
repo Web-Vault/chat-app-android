@@ -1,18 +1,17 @@
 package com.example.newchatapp;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 public class OtpActivity extends AppCompatActivity {
 
@@ -20,6 +19,8 @@ public class OtpActivity extends AppCompatActivity {
     Button verifyOtpBtn;
 
     FirebaseAuth mAuth;
+    FirebaseFirestore database;
+
     String mobileNumber;
 
     @Override
@@ -31,6 +32,7 @@ public class OtpActivity extends AppCompatActivity {
         verifyOtpBtn = findViewById(R.id.verifyOtpBtn);
 
         mAuth = FirebaseAuth.getInstance();
+        database = FirebaseFirestore.getInstance();
 
         mobileNumber = getIntent().getStringExtra("mobile");
 
@@ -65,20 +67,7 @@ public class OtpActivity extends AppCompatActivity {
 
                     if (task.isSuccessful()) {
 
-                        SharedPreferences preferences =
-                                getSharedPreferences("loginPrefs", MODE_PRIVATE);
-
-                        SharedPreferences.Editor editor =
-                                preferences.edit();
-
-                        editor.putBoolean("isLoggedIn", true);
-                        editor.putString("mobileNumber", mobileNumber);
-                        editor.apply();
-
-                        Intent intent = new Intent(OtpActivity.this, SetupProfileActivity.class);
-                        intent.putExtra("mobile", mobileNumber);
-                        startActivity(intent);
-                        finish();
+                        checkUserProfile();
 
                     } else {
 
@@ -86,6 +75,48 @@ public class OtpActivity extends AppCompatActivity {
                                 "Invalid OTP",
                                 Toast.LENGTH_SHORT).show();
                     }
+                });
+    }
+
+    private void checkUserProfile() {
+
+        String uid = mAuth.getCurrentUser().getUid();
+
+        database.collection("users")
+                .document(uid)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+
+                    if (documentSnapshot.exists()) {
+                        // Existing user → direct login
+
+                        Intent intent = new Intent(
+                                OtpActivity.this,
+                                ChatListActivity.class
+                        );
+
+                        startActivity(intent);
+                        finish();
+
+                    } else {
+                        // New user → setup profile
+
+                        Intent intent = new Intent(
+                                OtpActivity.this,
+                                SetupProfileActivity.class
+                        );
+
+                        intent.putExtra("mobile", mobileNumber);
+
+                        startActivity(intent);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+
+                    Toast.makeText(this,
+                            "Error: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
                 });
     }
 }

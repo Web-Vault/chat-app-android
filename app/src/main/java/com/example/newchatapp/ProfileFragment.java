@@ -1,7 +1,9 @@
 package com.example.newchatapp;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +14,6 @@ import android.widget.Toast;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 public class ProfileFragment extends Fragment {
 
@@ -20,10 +21,9 @@ public class ProfileFragment extends Fragment {
     Button logoutBtn;
 
     FirebaseAuth mAuth;
-    FirebaseFirestore database;
 
     public ProfileFragment() {
-        // Required empty public constructor
+        // Required empty constructor
     }
 
     @Override
@@ -38,12 +38,18 @@ public class ProfileFragment extends Fragment {
         logoutBtn = view.findViewById(R.id.logoutBtn);
 
         mAuth = FirebaseAuth.getInstance();
-        database = FirebaseFirestore.getInstance();
 
-        loadUserProfile();
+        loadProfileFromLocal();
 
         logoutBtn.setOnClickListener(v -> {
             mAuth.signOut();
+
+            // Clear SharedPreferences also
+            getActivity()
+                    .getSharedPreferences("userPrefs", getContext().MODE_PRIVATE)
+                    .edit()
+                    .clear()
+                    .apply();
 
             Intent intent = new Intent(getActivity(), LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -57,42 +63,25 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
-    private void loadUserProfile() {
+    private void loadProfileFromLocal() {
 
-        if (mAuth.getCurrentUser() == null) {
-            Toast.makeText(getContext(),
-                    "User not logged in",
-                    Toast.LENGTH_SHORT).show();
-            return;
+        SharedPreferences preferences =
+                requireActivity().getSharedPreferences("userPrefs", getContext().MODE_PRIVATE);
+
+        String name = preferences.getString("name", "");
+        String mobile = preferences.getString("mobile", "");
+        String status = preferences.getString("status", "");
+
+        if (!TextUtils.isEmpty(name)) {
+            profileName.setText("Name: " + name);
         }
 
-        String uid = mAuth.getCurrentUser().getUid();
+        if (!TextUtils.isEmpty(mobile)) {
+            profileMobile.setText("Mobile: " + mobile);
+        }
 
-        database.collection("users")
-                .document(uid)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-
-                    if (documentSnapshot.exists()) {
-
-                        String name = documentSnapshot.getString("name");
-                        String mobile = documentSnapshot.getString("mobileNumber");
-                        String status = documentSnapshot.getString("status");
-
-                        profileName.setText("Name: " + name);
-                        profileMobile.setText("Mobile: " + mobile);
-                        profileStatus.setText("Status: " + status);
-
-                    } else {
-                        Toast.makeText(getContext(),
-                                "Profile not found",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(getContext(),
-                            "Error: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
+        if (!TextUtils.isEmpty(status)) {
+            profileStatus.setText("Status: " + status);
+        }
     }
 }

@@ -70,6 +70,14 @@ public class SetupProfileActivity extends AppCompatActivity {
                 .set(user)
                 .addOnSuccessListener(unused -> {
 
+                    // Save locally in SharedPreferences
+                    getSharedPreferences("userPrefs", MODE_PRIVATE)
+                            .edit()
+                            .putString("name", name)
+                            .putString("mobile", mobileNumber)
+                            .putString("status", "Hey there! I am using Chat App")
+                            .apply();
+
                     Toast.makeText(this,
                             "Profile Saved Successfully",
                             Toast.LENGTH_SHORT).show();
