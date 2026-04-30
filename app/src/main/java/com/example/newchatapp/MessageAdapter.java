@@ -9,15 +9,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 import java.util.ArrayList;
 
-public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class MessageAdapter extends RecyclerView.Adapter {
 
     Context context;
     ArrayList<Message> messageList;
 
-    int ITEM_SENT = 1;
-    int ITEM_RECEIVED = 2;
+    final int ITEM_SENT = 1;
+    final int ITEM_RECEIVE = 2;
 
     public MessageAdapter(Context context, ArrayList<Message> messageList) {
         this.context = context;
@@ -26,16 +28,21 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @Override
     public int getItemViewType(int position) {
-        if (messageList.get(position).getSender().equals("me")) {
+        Message message = messageList.get(position);
+
+        if (FirebaseAuth.getInstance().getUid()
+                .equals(message.getSenderId())) {
             return ITEM_SENT;
         } else {
-            return ITEM_RECEIVED;
+            return ITEM_RECEIVE;
         }
     }
 
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(
+            @NonNull ViewGroup parent,
+            int viewType) {
 
         if (viewType == ITEM_SENT) {
             View view = LayoutInflater.from(context)
@@ -44,19 +51,23 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         } else {
             View view = LayoutInflater.from(context)
                     .inflate(R.layout.item_received_message, parent, false);
-            return new ReceivedViewHolder(view);
+            return new ReceiverViewHolder(view);
         }
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(
+            @NonNull RecyclerView.ViewHolder holder,
+            int position) {
 
         Message message = messageList.get(position);
 
         if (holder.getClass() == SentViewHolder.class) {
-            ((SentViewHolder) holder).sentMessageText.setText(message.getMessage());
+            SentViewHolder viewHolder = (SentViewHolder) holder;
+            viewHolder.sentMessage.setText(message.getMessage());
         } else {
-            ((ReceivedViewHolder) holder).receivedMessageText.setText(message.getMessage());
+            ReceiverViewHolder viewHolder = (ReceiverViewHolder) holder;
+            viewHolder.receivedMessage.setText(message.getMessage());
         }
     }
 
@@ -67,21 +78,21 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public class SentViewHolder extends RecyclerView.ViewHolder {
 
-        TextView sentMessageText;
+        TextView sentMessage;
 
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
-            sentMessageText = itemView.findViewById(R.id.sentMessageText);
+            sentMessage = itemView.findViewById(R.id.sentMessageText);
         }
     }
 
-    public class ReceivedViewHolder extends RecyclerView.ViewHolder {
+    public class ReceiverViewHolder extends RecyclerView.ViewHolder {
 
-        TextView receivedMessageText;
+        TextView receivedMessage;
 
-        public ReceivedViewHolder(@NonNull View itemView) {
+        public ReceiverViewHolder(@NonNull View itemView) {
             super(itemView);
-            receivedMessageText = itemView.findViewById(R.id.receivedMessageText);
+            receivedMessage = itemView.findViewById(R.id.receivedMessageText);
         }
     }
 }

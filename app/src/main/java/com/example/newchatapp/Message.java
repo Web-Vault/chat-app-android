@@ -2,19 +2,41 @@ package com.example.newchatapp;
 
 public class Message {
 
-    String message;
-    String sender;
+    private String message;
+    private String senderId;
+    private long timestamp;
 
-    public Message(String message, String sender) {
+    // Empty constructor required for Firebase
+    public Message() {
+    }
+
+    public Message(String message, String senderId, long timestamp) {
         this.message = message;
-        this.sender = sender;
+        this.senderId = senderId;
+        this.timestamp = timestamp;
     }
 
     public String getMessage() {
         return message;
     }
 
-    public String getSender() {
-        return sender;
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(String senderId) {
+        this.senderId = senderId;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 }

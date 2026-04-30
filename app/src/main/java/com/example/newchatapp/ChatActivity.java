@@ -1,25 +1,38 @@
 package com.example.newchatapp;
 
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Button;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.*;
 
 import java.util.ArrayList;
 
 public class ChatActivity extends AppCompatActivity {
 
-    TextView chatUserName, backBtn;
+    TextView chatUserName;
+    RecyclerView chatRecyclerView;
     EditText messageBox;
     Button sendBtn;
-    RecyclerView messageRecyclerView;
 
     ArrayList<Message> messageList;
     MessageAdapter adapter;
+
+    FirebaseAuth mAuth;
+    DatabaseReference databaseReference;
+
+    String senderRoom;
+    String receiverRoom;
+
+    String receiverName = "User";
+    String receiverUid = "demoUser123"; // temporary for testing
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,43 +40,74 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
 
         chatUserName = findViewById(R.id.chatUserName);
-        backBtn = findViewById(R.id.backBtn);
+        chatRecyclerView = findViewById(R.id.chatRecyclerView);
         messageBox = findViewById(R.id.messageBox);
         sendBtn = findViewById(R.id.sendBtn);
-        messageRecyclerView = findViewById(R.id.messageRecyclerView);
 
-        String userName = getIntent().getStringExtra("userName");
+        mAuth = FirebaseAuth.getInstance();
+        databaseReference = FirebaseDatabase.getInstance().getReference();
 
-        if (userName != null) {
-            chatUserName.setText(userName);
-        } else {
-            chatUserName.setText("Chat");
-        }
+        receiverName = getIntent().getStringExtra("userName");
+        chatUserName.setText(receiverName);
 
-        backBtn.setOnClickListener(v -> finish());
+        String senderUid = mAuth.getUid();
+
+        senderRoom = senderUid + receiverUid;
+        receiverRoom = receiverUid + senderUid;
 
         messageList = new ArrayList<>();
-
-        // Dummy messages
-        messageList.add(new Message("Hi bro", "other"));
-        messageList.add(new Message("Hello", "me"));
-        messageList.add(new Message("Where are you?", "other"));
-        messageList.add(new Message("Coming soon", "me"));
-
         adapter = new MessageAdapter(this, messageList);
 
-        messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        messageRecyclerView.setAdapter(adapter);
+        chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        chatRecyclerView.setAdapter(adapter);
 
+        // Load messages realtime
+        databaseReference.child("chats")
+                .child(senderRoom)
+                .child("messages")
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        messageList.clear();
+
+                        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                            Message message = dataSnapshot.getValue(Message.class);
+                            messageList.add(message);
+                        }
+
+                        adapter.notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+
+        // Send message
         sendBtn.setOnClickListener(v -> {
-            String msg = messageBox.getText().toString().trim();
+            String messageText = messageBox.getText().toString().trim();
 
-            if (!msg.isEmpty()) {
-                messageList.add(new Message(msg, "me"));
-                adapter.notifyDataSetChanged();
-                messageBox.setText("");
-                messageRecyclerView.smoothScrollToPosition(messageList.size() - 1);
-            }
+            if (messageText.isEmpty()) return;
+
+            Message message = new Message(
+                    messageText,
+                    senderUid,
+                    System.currentTimeMillis()
+            );
+
+            databaseReference.child("chats")
+                    .child(senderRoom)
+                    .child("messages")
+                    .push()
+                    .setValue(message);
+
+            databaseReference.child("chats")
+                    .child(receiverRoom)
+                    .child("messages")
+                    .push()
+                    .setValue(message);
+
+            messageBox.setText("");
         });
     }
 }

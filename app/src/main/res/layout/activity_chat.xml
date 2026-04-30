@@ -4,43 +4,25 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Top Toolbar -->
-    <LinearLayout
+    <!-- Top Bar -->
+    <TextView
+        android:id="@+id/chatUserName"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="#075E54"
-        android:padding="16dp">
+        android:layout_height="wrap_content"
+        android:text="User Name"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:padding="16dp" />
 
-        <TextView
-            android:id="@+id/backBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="←"
-            android:textSize="28sp"
-            android:textColor="#FFFFFF"
-            android:paddingEnd="16dp" />
-
-        <TextView
-            android:id="@+id/chatUserName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="User Name"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-
-    </LinearLayout>
-
-    <!-- Messages Area -->
+    <!-- Messages RecyclerView -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/messageRecyclerView"
+        android:id="@+id/chatRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:padding="8dp" />
 
-    <!-- Message Input -->
+    <!-- Bottom Send Layout -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

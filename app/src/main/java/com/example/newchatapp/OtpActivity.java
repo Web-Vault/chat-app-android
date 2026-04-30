@@ -88,7 +88,17 @@ public class OtpActivity extends AppCompatActivity {
                 .addOnSuccessListener(documentSnapshot -> {
 
                     if (documentSnapshot.exists()) {
-                        // Existing user → direct login
+
+                        String name = documentSnapshot.getString("name");
+                        String mobile = documentSnapshot.getString("mobileNumber");
+                        String status = documentSnapshot.getString("status");
+
+                        getSharedPreferences("userPrefs", MODE_PRIVATE)
+                                .edit()
+                                .putString("name", name)
+                                .putString("mobile", mobile)
+                                .putString("status", status)
+                                .apply();
 
                         Intent intent = new Intent(
                                 OtpActivity.this,
@@ -97,7 +107,6 @@ public class OtpActivity extends AppCompatActivity {
 
                         startActivity(intent);
                         finish();
-
                     } else {
                         // New user → setup profile
 
