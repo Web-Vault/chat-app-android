@@ -7,18 +7,21 @@ public class ChatUser {
     private String mobileNumber;
     private String lastMessage;
     private String time;
+    private long lastMessageTime;
 
     public ChatUser() {
-        // Required empty constructor for Firebase
+        // Required empty constructor
     }
 
     public ChatUser(String uid, String name, String mobileNumber,
-                    String lastMessage, String time) {
+                    String lastMessage, String time,
+                    long lastMessageTime) {
         this.uid = uid;
         this.name = name;
         this.mobileNumber = mobileNumber;
         this.lastMessage = lastMessage;
         this.time = time;
+        this.lastMessageTime = lastMessageTime;
     }
 
     public String getUid() {
@@ -59,5 +62,13 @@ public class ChatUser {
 
     public void setTime(String time) {
         this.time = time;
+    }
+
+    public long getLastMessageTime() {
+        return lastMessageTime;
+    }
+
+    public void setLastMessageTime(long lastMessageTime) {
+        this.lastMessageTime = lastMessageTime;
     }
 }

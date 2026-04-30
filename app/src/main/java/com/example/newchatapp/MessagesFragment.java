@@ -6,6 +6,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -34,6 +37,29 @@ public class MessagesFragment extends Fragment {
         // Required empty constructor
     }
 
+    private final Handler handler =
+            new Handler(Looper.getMainLooper());
+
+    private final Runnable timeUpdater = new Runnable() {
+        @Override
+        public void run() {
+
+            for (ChatUser user : userList) {
+
+                if (user.getLastMessageTime() > 0) {
+                    user.setTime(
+                            formatTime(user.getLastMessageTime())
+                    );
+                }
+            }
+
+            adapter.notifyDataSetChanged();
+
+            // refresh every 1 minute
+            handler.postDelayed(this, 60000);
+        }
+    };
+
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
@@ -61,6 +87,7 @@ public class MessagesFragment extends Fragment {
         realtimeDb = FirebaseDatabase.getInstance().getReference();
 
         loadRecentChats();
+        handler.post(timeUpdater);
 
         newChatBtn.setOnClickListener(v -> {
             Intent intent = new Intent(
@@ -116,20 +143,30 @@ public class MessagesFragment extends Fragment {
                                                     if (lastMessage != null) {
 
                                                         user.setLastMessage(lastMessage);
+
                                                         Long lastMessageTime =
                                                                 snapshot.child("lastMessageTime")
                                                                         .getValue(Long.class);
 
                                                         if (lastMessageTime != null) {
+                                                            user.setLastMessageTime(lastMessageTime);
                                                             user.setTime(formatTime(lastMessageTime));
                                                         }
 
                                                         boolean exists = false;
 
                                                         for (ChatUser existingUser : userList) {
+
                                                             if (existingUser.getUid()
                                                                     .equals(user.getUid())) {
+
                                                                 existingUser.setLastMessage(lastMessage);
+
+                                                                if (lastMessageTime != null) {
+                                                                    existingUser.setLastMessageTime(lastMessageTime);
+                                                                    existingUser.setTime(formatTime(lastMessageTime));
+                                                                }
+
                                                                 exists = true;
                                                                 break;
                                                             }
@@ -138,6 +175,15 @@ public class MessagesFragment extends Fragment {
                                                         if (!exists) {
                                                             userList.add(user);
                                                         }
+
+                                                        // Sort latest chats on top
+                                                        java.util.Collections.sort(
+                                                                userList,
+                                                                (u1, u2) -> Long.compare(
+                                                                        u2.getLastMessageTime(),
+                                                                        u1.getLastMessageTime()
+                                                                )
+                                                        );
 
                                                         adapter.notifyDataSetChanged();
                                                     }
@@ -179,5 +225,11 @@ public class MessagesFragment extends Fragment {
 
             return sdf.format(new java.util.Date(timestamp));
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        handler.removeCallbacks(timeUpdater);
     }
 }

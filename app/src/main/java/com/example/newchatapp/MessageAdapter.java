@@ -62,12 +62,33 @@ public class MessageAdapter extends RecyclerView.Adapter {
 
         Message message = messageList.get(position);
 
-        if (holder.getClass() == SentViewHolder.class) {
-            SentViewHolder viewHolder = (SentViewHolder) holder;
-            viewHolder.sentMessage.setText(message.getMessage());
-        } else {
-            ReceiverViewHolder viewHolder = (ReceiverViewHolder) holder;
-            viewHolder.receivedMessage.setText(message.getMessage());
+        // SENT MESSAGE
+        if (holder instanceof SentViewHolder) {
+
+            SentViewHolder viewHolder =
+                    (SentViewHolder) holder;
+
+            viewHolder.sentMessage.setText(
+                    message.getMessage()
+            );
+
+            // ✓ and ✓✓ logic
+            if (message.isSeen()) {
+                viewHolder.messageStatus.setText("✓✓");
+            } else {
+                viewHolder.messageStatus.setText("✓");
+            }
+
+        }
+        // RECEIVED MESSAGE
+        else {
+
+            ReceiverViewHolder viewHolder =
+                    (ReceiverViewHolder) holder;
+
+            viewHolder.receivedMessage.setText(
+                    message.getMessage()
+            );
         }
     }
 
@@ -76,23 +97,33 @@ public class MessageAdapter extends RecyclerView.Adapter {
         return messageList.size();
     }
 
+    // SENT VIEW HOLDER
     public class SentViewHolder extends RecyclerView.ViewHolder {
 
         TextView sentMessage;
+        TextView messageStatus;
 
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
-            sentMessage = itemView.findViewById(R.id.sentMessageText);
+
+            sentMessage =
+                    itemView.findViewById(R.id.sentMessage);
+
+            messageStatus =
+                    itemView.findViewById(R.id.messageStatus);
         }
     }
 
+    // RECEIVED VIEW HOLDER
     public class ReceiverViewHolder extends RecyclerView.ViewHolder {
 
         TextView receivedMessage;
 
         public ReceiverViewHolder(@NonNull View itemView) {
             super(itemView);
-            receivedMessage = itemView.findViewById(R.id.receivedMessageText);
+
+            receivedMessage =
+                    itemView.findViewById(R.id.receivedMessageText);
         }
     }
 }

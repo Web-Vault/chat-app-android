@@ -5,15 +5,17 @@ public class Message {
     private String message;
     private String senderId;
     private long timestamp;
+    private boolean seen;
 
-    // Empty constructor required for Firebase
     public Message() {
+        // Required empty constructor
     }
 
     public Message(String message, String senderId, long timestamp) {
         this.message = message;
         this.senderId = senderId;
         this.timestamp = timestamp;
+        this.seen = false;
     }
 
     public String getMessage() {
@@ -38,5 +40,13 @@ public class Message {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public boolean isSeen() {
+        return seen;
+    }
+
+    public void setSeen(boolean seen) {
+        this.seen = seen;
     }
 }

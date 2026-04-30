@@ -43,11 +43,13 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        // Views
         chatUserName = findViewById(R.id.chatUserName);
         chatRecyclerView = findViewById(R.id.chatRecyclerView);
         messageBox = findViewById(R.id.messageBox);
         sendBtn = findViewById(R.id.sendBtn);
 
+        // Firebase
         mAuth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference();
 
@@ -88,11 +90,38 @@ public class ChatActivity extends AppCompatActivity {
                         messageList.clear();
 
                         for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+
                             Message message =
                                     dataSnapshot.getValue(Message.class);
 
                             if (message != null) {
+
                                 messageList.add(message);
+
+                                // Mark ONLY received messages as seen
+                                if (!message.getSenderId().equals(senderUid)) {
+
+                                    String messageKey = dataSnapshot.getKey();
+
+                                    if (messageKey != null) {
+
+                                        // Update receiver room
+                                        databaseReference.child("chats")
+                                                .child(senderRoom)
+                                                .child("messages")
+                                                .child(messageKey)
+                                                .child("seen")
+                                                .setValue(true);
+
+                                        // Update sender room
+                                        databaseReference.child("chats")
+                                                .child(receiverRoom)
+                                                .child("messages")
+                                                .child(messageKey)
+                                                .child("seen")
+                                                .setValue(true);
+                                    }
+                                }
                             }
                         }
 
