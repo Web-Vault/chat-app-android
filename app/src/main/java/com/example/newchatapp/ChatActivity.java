@@ -11,11 +11,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.*;
 
 import java.util.ArrayList;
 
@@ -38,22 +34,21 @@ public class ChatActivity extends AppCompatActivity {
     String receiverName;
     String receiverUid;
 
+    ChildEventListener messageListener;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        // Views
         chatUserName = findViewById(R.id.chatUserName);
         chatRecyclerView = findViewById(R.id.chatRecyclerView);
         messageBox = findViewById(R.id.messageBox);
         sendBtn = findViewById(R.id.sendBtn);
 
-        // Firebase
         mAuth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference();
 
-        // Get selected user data from Intent
         receiverName = getIntent().getStringExtra("userName");
         receiverUid = getIntent().getStringExtra("userUid");
 
@@ -66,89 +61,24 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        // Create sender and receiver rooms
         senderRoom = senderUid + receiverUid;
         receiverRoom = receiverUid + senderUid;
 
-        // RecyclerView setup
         messageList = new ArrayList<>();
         adapter = new MessageAdapter(this, messageList);
 
-        chatRecyclerView.setLayoutManager(
-                new LinearLayoutManager(this)
-        );
+        chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         chatRecyclerView.setAdapter(adapter);
 
-        // Load messages in realtime
-        databaseReference.child("chats")
-                .child(senderRoom)
-                .child("messages")
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-
-                        messageList.clear();
-
-                        for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-
-                            Message message =
-                                    dataSnapshot.getValue(Message.class);
-
-                            if (message != null) {
-
-                                messageList.add(message);
-
-                                // Mark ONLY received messages as seen
-                                if (!message.getSenderId().equals(senderUid)) {
-
-                                    String messageKey = dataSnapshot.getKey();
-
-                                    if (messageKey != null) {
-
-                                        // Update receiver room
-                                        databaseReference.child("chats")
-                                                .child(senderRoom)
-                                                .child("messages")
-                                                .child(messageKey)
-                                                .child("seen")
-                                                .setValue(true);
-
-                                        // Update sender room
-                                        databaseReference.child("chats")
-                                                .child(receiverRoom)
-                                                .child("messages")
-                                                .child(messageKey)
-                                                .child("seen")
-                                                .setValue(true);
-                                    }
-                                }
-                            }
-                        }
-
-                        adapter.notifyDataSetChanged();
-
-                        if (messageList.size() > 0) {
-                            chatRecyclerView.scrollToPosition(
-                                    messageList.size() - 1
-                            );
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-
-                    }
-                });
-
-        // Send message
+        // 🔥 SEND MESSAGE
         sendBtn.setOnClickListener(v -> {
 
-            String messageText =
-                    messageBox.getText().toString().trim();
+            String messageText = messageBox.getText().toString().trim();
 
-            if (messageText.isEmpty()) {
-                return;
-            }
+            if (messageText.isEmpty()) return;
+
+            String messageId = databaseReference.push().getKey();
+            if (messageId == null) return;
 
             Message message = new Message(
                     messageText,
@@ -156,21 +86,21 @@ public class ChatActivity extends AppCompatActivity {
                     System.currentTimeMillis()
             );
 
-            // Save message in sender room
+            // sender
             databaseReference.child("chats")
                     .child(senderRoom)
                     .child("messages")
-                    .push()
+                    .child(messageId)
                     .setValue(message);
 
-            // Save message in receiver room
+            // receiver
             databaseReference.child("chats")
                     .child(receiverRoom)
                     .child("messages")
-                    .push()
+                    .child(messageId)
                     .setValue(message);
 
-            // Save last message for sender room
+            // last message
             databaseReference.child("chats")
                     .child(senderRoom)
                     .child("lastMessage")
@@ -181,7 +111,6 @@ public class ChatActivity extends AppCompatActivity {
                     .child("lastMessageTime")
                     .setValue(System.currentTimeMillis());
 
-            // Save last message for receiver room
             databaseReference.child("chats")
                     .child(receiverRoom)
                     .child("lastMessage")
@@ -192,8 +121,114 @@ public class ChatActivity extends AppCompatActivity {
                     .child("lastMessageTime")
                     .setValue(System.currentTimeMillis());
 
-            // Clear input box
             messageBox.setText("");
         });
+    }
+
+    // 🔥 ATTACH LISTENER
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        attachListener();
+    }
+
+    // 🔥 REMOVE LISTENER
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        if (messageListener != null) {
+            databaseReference.child("chats")
+                    .child(senderRoom)
+                    .child("messages")
+                    .removeEventListener(messageListener);
+        }
+    }
+
+    // 🔥 MAIN LISTENER
+    private void attachListener() {
+
+        messageListener = new ChildEventListener() {
+
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
+
+                Message message = snapshot.getValue(Message.class);
+
+                if (message != null) {
+
+                    messageList.add(message);
+                    adapter.notifyItemInserted(messageList.size() - 1);
+                    chatRecyclerView.scrollToPosition(messageList.size() - 1);
+
+                    String messageKey = snapshot.getKey();
+
+                    if (!message.getSenderId().equals(mAuth.getUid()) && messageKey != null) {
+
+                        // DELIVERED
+                        databaseReference.child("chats")
+                                .child(senderRoom)
+                                .child("messages")
+                                .child(messageKey)
+                                .child("delivered")
+                                .setValue(true);
+
+                        databaseReference.child("chats")
+                                .child(receiverRoom)
+                                .child("messages")
+                                .child(messageKey)
+                                .child("delivered")
+                                .setValue(true);
+
+                        // SEEN
+                        databaseReference.child("chats")
+                                .child(senderRoom)
+                                .child("messages")
+                                .child(messageKey)
+                                .child("seen")
+                                .setValue(true);
+
+                        databaseReference.child("chats")
+                                .child(receiverRoom)
+                                .child("messages")
+                                .child(messageKey)
+                                .child("seen")
+                                .setValue(true);
+                    }
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, String previousChildName) {
+
+                Message updatedMessage = snapshot.getValue(Message.class);
+
+                if (updatedMessage != null) {
+
+                    for (int i = 0; i < messageList.size(); i++) {
+
+                        Message local = messageList.get(i);
+
+                        if (local.getTimestamp() == updatedMessage.getTimestamp()
+                                && local.getSenderId().equals(updatedMessage.getSenderId())) {
+
+                            messageList.set(i, updatedMessage);
+                            adapter.notifyItemChanged(i);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String previousChildName) {}
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
+        };
+
+        databaseReference.child("chats")
+                .child(senderRoom)
+                .child("messages")
+                .addChildEventListener(messageListener);
     }
 }

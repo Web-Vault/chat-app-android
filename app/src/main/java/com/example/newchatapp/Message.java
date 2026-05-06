@@ -6,6 +6,7 @@ public class Message {
     private String senderId;
     private long timestamp;
     private boolean seen;
+    private boolean delivered;
 
     public Message() {
         // Required empty constructor
@@ -16,10 +17,15 @@ public class Message {
         this.senderId = senderId;
         this.timestamp = timestamp;
         this.seen = false;
+        this.delivered = false;
     }
 
     public String getMessage() {
         return message;
+    }
+
+    public boolean isDelivered() {
+        return delivered;
     }
 
     public void setMessage(String message) {
@@ -48,5 +54,9 @@ public class Message {
 
     public void setSeen(boolean seen) {
         this.seen = seen;
+    }
+
+    public void setDelivered(boolean delivered) {
+        this.delivered = delivered;
     }
 }

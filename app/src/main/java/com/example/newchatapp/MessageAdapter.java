@@ -65,18 +65,19 @@ public class MessageAdapter extends RecyclerView.Adapter {
         // SENT MESSAGE
         if (holder instanceof SentViewHolder) {
 
-            SentViewHolder viewHolder =
-                    (SentViewHolder) holder;
+            SentViewHolder viewHolder = (SentViewHolder) holder;
 
             viewHolder.sentMessage.setText(
                     message.getMessage()
             );
 
-            // ✓ and ✓✓ logic
+            // ✓ / ✓✓ logic
             if (message.isSeen()) {
-                viewHolder.messageStatus.setText("✓✓");
+                viewHolder.messageStatus.setText("✓✓"); // seen
+            } else if (message.isDelivered()) {
+                viewHolder.messageStatus.setText("✓✓"); // delivered
             } else {
-                viewHolder.messageStatus.setText("✓");
+                viewHolder.messageStatus.setText("✓"); // sent
             }
 
         }
@@ -106,11 +107,8 @@ public class MessageAdapter extends RecyclerView.Adapter {
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            sentMessage =
-                    itemView.findViewById(R.id.sentMessage);
-
-            messageStatus =
-                    itemView.findViewById(R.id.messageStatus);
+            sentMessage = itemView.findViewById(R.id.sentMessage);
+            messageStatus = itemView.findViewById(R.id.messageStatus);
         }
     }
 
