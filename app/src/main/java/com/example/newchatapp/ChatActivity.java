@@ -261,6 +261,7 @@ public class ChatActivity extends AppCompatActivity {
             public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
                 Message message = snapshot.getValue(Message.class);
                 if (message != null) {
+                    message.setMessageId(snapshot.getKey());
                     messageList.add(message);
                     adapter.notifyItemInserted(messageList.size() - 1);
                     chatRecyclerView.scrollToPosition(messageList.size() - 1);
@@ -290,7 +291,25 @@ public class ChatActivity extends AppCompatActivity {
                 }
             }
 
-            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+
+                String deletedId = snapshot.getKey();
+
+                for (int i = 0; i < messageList.size(); i++) {
+
+                    Message message = messageList.get(i);
+
+                    if (message.getMessageId() != null &&
+                            message.getMessageId().equals(deletedId)) {
+
+                        messageList.remove(i);
+                        adapter.notifyItemRemoved(i);
+                        break;
+                    }
+                }
+            }
+
             @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String previousChildName) {}
             @Override public void onCancelled(@NonNull DatabaseError error) {}
         };
@@ -305,7 +324,8 @@ public class ChatActivity extends AppCompatActivity {
 
         String[] options = {
                 "Copy",
-                "Info"
+                "Info",
+                "Delete for me"
         };
 
         new AlertDialog.Builder(this)
@@ -315,9 +335,11 @@ public class ChatActivity extends AppCompatActivity {
                     if (which == 0) {
                         copyMessage(message);
                     }
-
                     else if (which == 1) {
                         showMessageInfo(message);
+                    }
+                    else if (which == 2) {
+                        deleteForMe(message);
                     }
 
                 })
@@ -374,5 +396,77 @@ public class ChatActivity extends AppCompatActivity {
                 .setMessage(info)
                 .setPositiveButton("OK", null)
                 .show();
+    }
+
+    private void deleteForMe(Message message) {
+
+        if (message.getMessageId() == null) {
+            Toast.makeText(
+                    this,
+                    "Unable to delete message",
+                    Toast.LENGTH_SHORT
+            ).show();
+            return;
+        }
+
+        databaseReference.child("chats")
+                .child(senderRoom)
+                .child("messages")
+                .child(message.getMessageId())
+                .removeValue()
+                .addOnSuccessListener(unused -> {
+
+                    databaseReference.child("chats")
+                            .child(senderRoom)
+                            .child("messages")
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+
+                                String latestMessage = "";
+                                long latestTime = 0;
+
+                                for (DataSnapshot ds : snapshot.getChildren()) {
+
+                                    Message msg =
+                                            ds.getValue(Message.class);
+
+                                    if (msg != null &&
+                                            msg.getTimestamp() > latestTime) {
+
+                                        latestTime =
+                                                msg.getTimestamp();
+
+                                        latestMessage =
+                                                msg.getMessage();
+                                    }
+                                }
+
+                                databaseReference.child("chats")
+                                        .child(senderRoom)
+                                        .child("lastMessage")
+                                        .setValue(latestMessage);
+
+                                databaseReference.child("chats")
+                                        .child(senderRoom)
+                                        .child("lastMessageTime")
+                                        .setValue(latestTime);
+                            });
+
+                    Toast.makeText(
+                            this,
+                            "Message deleted",
+                            Toast.LENGTH_SHORT
+                    ).show();
+
+                })
+                .addOnFailureListener(e -> {
+
+                    Toast.makeText(
+                            this,
+                            e.getMessage(),
+                            Toast.LENGTH_LONG
+                    ).show();
+
+                });
     }
 }

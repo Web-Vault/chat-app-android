@@ -2,6 +2,7 @@ package com.example.newchatapp;
 
 public class Message {
 
+    private String messageId;
     private String message;
     private String senderId;
     private long timestamp;
@@ -30,6 +31,14 @@ public class Message {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 
     public String getSenderId() {
