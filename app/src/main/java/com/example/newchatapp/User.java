@@ -7,7 +7,8 @@ public class User {
     private String mobileNumber;
     private String profileImage;
     private String status;
-    private String lastSeen;
+    private long lastSeen;
+    private boolean isOnline;
 
     // Empty constructor required for Firebase
     public User() {
@@ -15,7 +16,7 @@ public class User {
 
     // Full constructor
     public User(String uid, String name, String mobileNumber,
-                String profileImage, String status, String lastSeen) {
+                String profileImage, String status, long lastSeen, boolean isOnline) {
 
         this.uid = uid;
         this.name = name;
@@ -23,6 +24,7 @@ public class User {
         this.profileImage = profileImage;
         this.status = status;
         this.lastSeen = lastSeen;
+        this.isOnline = isOnline;
     }
 
     // Getters and Setters
@@ -67,11 +69,19 @@ public class User {
         this.status = status;
     }
 
-    public String getLastSeen() {
+    public long getLastSeen() {
         return lastSeen;
     }
 
-    public void setLastSeen(String lastSeen) {
+    public void setLastSeen(long lastSeen) {
         this.lastSeen = lastSeen;
+    }
+
+    public boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(boolean online) {
+        isOnline = online;
     }
 }

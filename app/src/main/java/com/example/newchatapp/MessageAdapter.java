@@ -18,12 +18,23 @@ public class MessageAdapter extends RecyclerView.Adapter {
     Context context;
     ArrayList<Message> messageList;
 
+    OnMessageLongClickListener listener;
+
+    public interface OnMessageLongClickListener {
+        void onMessageLongClick(Message message);
+    }
+
     final int ITEM_SENT = 1;
     final int ITEM_RECEIVE = 2;
 
-    public MessageAdapter(Context context, ArrayList<Message> messageList) {
+    public MessageAdapter(
+            Context context,
+            ArrayList<Message> messageList,
+            OnMessageLongClickListener listener) {
+
         this.context = context;
         this.messageList = messageList;
+        this.listener = listener;
     }
 
     @Override
@@ -71,6 +82,15 @@ public class MessageAdapter extends RecyclerView.Adapter {
                     message.getMessage()
             );
 
+            holder.itemView.setOnLongClickListener(v -> {
+
+                if (listener != null) {
+                    listener.onMessageLongClick(message);
+                }
+
+                return true;
+            });
+
             // ✓ / ✓✓ logic
             if (message.isSeen()) {
                 viewHolder.messageStatus.setText("✓✓"); // seen
@@ -90,6 +110,15 @@ public class MessageAdapter extends RecyclerView.Adapter {
             viewHolder.receivedMessage.setText(
                     message.getMessage()
             );
+
+            holder.itemView.setOnLongClickListener(v -> {
+
+                if (listener != null) {
+                    listener.onMessageLongClick(message);
+                }
+
+                return true;
+            });
         }
     }
 

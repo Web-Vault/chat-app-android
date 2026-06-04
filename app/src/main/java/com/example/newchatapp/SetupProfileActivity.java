@@ -56,13 +56,15 @@ public class SetupProfileActivity extends AppCompatActivity {
 
         String uid = mAuth.getCurrentUser().getUid();
 
+        // Updated User object with long lastSeen and boolean isOnline
         User user = new User(
                 uid,
                 name,
                 mobileNumber,
                 "",
                 "Hey there! I am using Chat App",
-                "Online"
+                System.currentTimeMillis(),
+                true
         );
 
         database.collection("users")
