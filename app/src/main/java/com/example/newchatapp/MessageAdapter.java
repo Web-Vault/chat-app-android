@@ -78,9 +78,18 @@ public class MessageAdapter extends RecyclerView.Adapter {
 
             SentViewHolder viewHolder = (SentViewHolder) holder;
 
-            viewHolder.sentMessage.setText(
-                    message.getMessage()
-            );
+            if (message.isDeleted()) {
+
+                viewHolder.sentMessage.setText(
+                        "This message was deleted"
+                );
+
+            } else {
+
+                viewHolder.sentMessage.setText(
+                        message.getMessage()
+                );
+            }
 
             holder.itemView.setOnLongClickListener(v -> {
 
@@ -107,9 +116,18 @@ public class MessageAdapter extends RecyclerView.Adapter {
             ReceiverViewHolder viewHolder =
                     (ReceiverViewHolder) holder;
 
-            viewHolder.receivedMessage.setText(
-                    message.getMessage()
-            );
+            if (message.isDeleted()) {
+
+                viewHolder.receivedMessage.setText(
+                        "This message was deleted"
+                );
+
+            } else {
+
+                viewHolder.receivedMessage.setText(
+                        message.getMessage()
+                );
+            }
 
             holder.itemView.setOnLongClickListener(v -> {
 

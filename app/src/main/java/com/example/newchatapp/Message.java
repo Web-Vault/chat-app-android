@@ -8,7 +8,7 @@ public class Message {
     private long timestamp;
     private boolean seen;
     private boolean delivered;
-
+    private boolean deleted;
     public Message() {
         // Required empty constructor
     }
@@ -19,6 +19,7 @@ public class Message {
         this.timestamp = timestamp;
         this.seen = false;
         this.delivered = false;
+        this.deleted = false;
     }
 
     public String getMessage() {
@@ -67,5 +68,13 @@ public class Message {
 
     public void setDelivered(boolean delivered) {
         this.delivered = delivered;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }
