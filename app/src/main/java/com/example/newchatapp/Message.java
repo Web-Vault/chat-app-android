@@ -9,6 +9,8 @@ public class Message {
     private boolean seen;
     private boolean delivered;
     private boolean deleted;
+    private long deliveredTime;
+    private long seenTime;
     public Message() {
         // Required empty constructor
     }
@@ -76,5 +78,21 @@ public class Message {
 
     public void setDeleted(boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public long getDeliveredTime() {
+        return deliveredTime;
+    }
+
+    public void setDeliveredTime(long deliveredTime) {
+        this.deliveredTime = deliveredTime;
+    }
+
+    public long getSeenTime() {
+        return seenTime;
+    }
+
+    public void setSeenTime(long seenTime) {
+        this.seenTime = seenTime;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.newchatapp;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -283,8 +284,53 @@ public class ChatActivity extends AppCompatActivity {
                 if (!senderId.equals(mAuth.getUid())
                         && messageKey != null) {
 
+                    long currentTime = System.currentTimeMillis();
+
                     databaseReference.child("chats")
                             .child(senderRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("delivered")
+                            .setValue(true);
+
+                    databaseReference.child("chats")
+                            .child(senderRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("deliveredTime")
+                            .setValue(currentTime);
+
+                    databaseReference.child("chats")
+                            .child(receiverRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("delivered")
+                            .setValue(true);
+
+                    databaseReference.child("chats")
+                            .child(receiverRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("deliveredTime")
+                            .setValue(currentTime);
+
+
+                    databaseReference.child("chats")
+                            .child(senderRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("seen")
+                            .setValue(true);
+
+                    databaseReference.child("chats")
+                            .child(senderRoom)
+                            .child("messages")
+                            .child(messageKey)
+                            .child("seenTime")
+                            .setValue(currentTime);
+
+                    databaseReference.child("chats")
+                            .child(receiverRoom)
                             .child("messages")
                             .child(messageKey)
                             .child("seen")
@@ -294,8 +340,8 @@ public class ChatActivity extends AppCompatActivity {
                             .child(receiverRoom)
                             .child("messages")
                             .child(messageKey)
-                            .child("seen")
-                            .setValue(true);
+                            .child("seenTime")
+                            .setValue(currentTime);
                 }
             }
 
@@ -372,7 +418,6 @@ public class ChatActivity extends AppCompatActivity {
 
             options = new String[]{
                     "Copy",
-                    "Info",
                     "Delete for Me"
             };
         }
@@ -381,24 +426,73 @@ public class ChatActivity extends AppCompatActivity {
                 .setTitle("Message Options")
                 .setItems(options, (dialog, which) -> {
 
-                    if (which == 0) {
-                        copyMessage(message);
-                    }
-                    else if (which == 1) {
-                        showMessageInfo(message);
-                    }
-                    else if (which == 2) {
-                        deleteForMe(message);
-                    }
-                    else if (which == 3 &&
-                            message.getSenderId().equals(mAuth.getUid())) {
+                    if (message.getSenderId().equals(mAuth.getUid())) {
 
-                        deleteForEveryone(message);
+                        switch (which) {
 
+                            case 0:
+                                copyMessage(message);
+                                break;
+
+                            case 1:
+                                Intent intent = getIntent(message);
+
+                                startActivity(intent);
+                                break;
+
+                            case 2:
+                                deleteForMe(message);
+                                break;
+
+                            case 3:
+                                deleteForEveryone(message);
+                                break;
+                        }
+
+                    } else {
+
+                        switch (which) {
+
+                            case 0:
+                                copyMessage(message);
+                                break;
+
+                            case 1:
+                                deleteForMe(message);
+                                break;
+                        }
                     }
-
                 })
                 .show();
+    }
+
+    private Intent getIntent(Message message) {
+        Intent intent =
+                new Intent(
+                        ChatActivity.this,
+                        MessageInfoActivity.class
+                );
+
+        intent.putExtra(
+                "message",
+                message.getMessage()
+        );
+
+        intent.putExtra(
+                "sentTime",
+                message.getTimestamp()
+        );
+
+        intent.putExtra(
+                "deliveredTime",
+                message.getDeliveredTime()
+        );
+
+        intent.putExtra(
+                "seenTime",
+                message.getSeenTime()
+        );
+        return intent;
     }
 
     private void copyMessage(Message message) {
@@ -424,27 +518,39 @@ public class ChatActivity extends AppCompatActivity {
 
     private void showMessageInfo(Message message) {
 
-        String status;
+        String sentTime =
+                android.text.format.DateFormat.format(
+                        "dd/MM/yyyy hh:mm a",
+                        message.getTimestamp()
+                ).toString();
 
-        if (message.isSeen()) {
-            status = "Seen";
+        String deliveredTime = "Not Delivered";
+
+        if (message.getDeliveredTime() > 0) {
+
+            deliveredTime =
+                    android.text.format.DateFormat.format(
+                            "dd/MM/yyyy hh:mm a",
+                            message.getDeliveredTime()
+                    ).toString();
         }
-        else if (message.isDelivered()) {
-            status = "Delivered";
-        }
-        else {
-            status = "Sent";
+
+        String seenTime = "Not Seen";
+
+        if (message.getSeenTime() > 0) {
+
+            seenTime =
+                    android.text.format.DateFormat.format(
+                            "dd/MM/yyyy hh:mm a",
+                            message.getSeenTime()
+                    ).toString();
         }
 
         String info =
                 "Message: " + message.getMessage()
-                        + "\n\nStatus: " + status
-                        + "\n\nTime: "
-                        + android.text.format.DateFormat
-                        .format(
-                                "dd/MM/yyyy hh:mm a",
-                                message.getTimestamp()
-                        );
+                        + "\n\nSent: " + sentTime
+                        + "\n\nDelivered: " + deliveredTime
+                        + "\n\nSeen: " + seenTime;
 
         new AlertDialog.Builder(this)
                 .setTitle("Message Info")

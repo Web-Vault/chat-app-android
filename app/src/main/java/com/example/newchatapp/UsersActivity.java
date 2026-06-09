@@ -1,6 +1,7 @@
 package com.example.newchatapp;
 
 import android.os.Bundle;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,12 +22,17 @@ public class UsersActivity extends AppCompatActivity {
     FirebaseFirestore database;
     FirebaseAuth mAuth;
 
+    ImageView BackBtn;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users);
 
         usersRecyclerView = findViewById(R.id.usersRecyclerView);
+        BackBtn = findViewById(R.id.btnBack);
+
+        BackBtn.setOnClickListener(v -> finish());
 
         userList = new ArrayList<>();
         adapter = new ChatUserAdapter(this, userList);

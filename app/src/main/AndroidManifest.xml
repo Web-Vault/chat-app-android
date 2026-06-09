@@ -18,7 +18,7 @@
         <activity android:name=".SetupProfileActivity" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".UsersActivity" />
-
+        <activity android:name=".MessageInfoActivity"/>
         <activity
             android:name=".SplashActivity"
             android:exported="true">
