@@ -126,6 +126,47 @@ public class MessagesFragment extends Fragment {
                         String senderRoom =
                                 currentUid + user.getUid();
 
+                        realtimeDb.child("typing")
+                                .child(user.getUid())
+                                .addValueEventListener(
+                                        new ValueEventListener() {
+
+                                            @Override
+                                            public void onDataChange(
+                                                    @NonNull DataSnapshot snapshot) {
+
+                                                Boolean isTyping =
+                                                        snapshot.child("isTyping")
+                                                                .getValue(Boolean.class);
+
+                                                String typingTo =
+                                                        snapshot.child("typingTo")
+                                                                .getValue(String.class);
+
+                                                boolean showTyping =
+                                                        Boolean.TRUE.equals(isTyping)
+                                                                && currentUid.equals(typingTo);
+
+                                                for (ChatUser existingUser : userList) {
+
+                                                    if (existingUser.getUid()
+                                                            .equals(user.getUid())) {
+
+                                                        existingUser.setTyping(showTyping);
+
+                                                        adapter.notifyDataSetChanged();
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onCancelled(
+                                                    @NonNull DatabaseError error) {
+
+                                            }
+                                        });
+
                         realtimeDb.child("chats")
                                 .child(senderRoom)
                                 .addValueEventListener(
@@ -148,6 +189,14 @@ public class MessagesFragment extends Fragment {
                                                                 snapshot.child("lastMessageTime")
                                                                         .getValue(Long.class);
 
+                                                        Long unreadCount =
+                                                                snapshot.child("unreadCount")
+                                                                        .getValue(Long.class);
+
+                                                        if (unreadCount != null) {
+                                                            user.setUnreadCount(unreadCount);
+                                                        }
+
                                                         if (lastMessageTime != null) {
                                                             user.setLastMessageTime(lastMessageTime);
                                                             user.setTime(formatTime(lastMessageTime));
@@ -167,12 +216,20 @@ public class MessagesFragment extends Fragment {
                                                                     existingUser.setTime(formatTime(lastMessageTime));
                                                                 }
 
+                                                                existingUser.setUnreadCount(
+                                                                        unreadCount == null ? 0 : unreadCount
+                                                                );
+
                                                                 exists = true;
                                                                 break;
                                                             }
                                                         }
 
                                                         if (!exists) {
+                                                            user.setUnreadCount(
+                                                                    unreadCount == null ? 0 : unreadCount
+                                                            );
+
                                                             userList.add(user);
                                                         }
 

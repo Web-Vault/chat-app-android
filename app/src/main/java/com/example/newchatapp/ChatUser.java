@@ -8,7 +8,8 @@ public class ChatUser {
     private String lastMessage;
     private String time;
     private long lastMessageTime;
-
+    private long unreadCount;
+    private boolean typing;
     public ChatUser() {
         // Required empty constructor
     }
@@ -70,5 +71,19 @@ public class ChatUser {
 
     public void setLastMessageTime(long lastMessageTime) {
         this.lastMessageTime = lastMessageTime;
+    }
+
+    public long getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(long unreadCount) {
+        this.unreadCount = unreadCount;
+    }
+    public boolean isTyping() {
+        return typing;
+    }
+    public void setTyping(boolean typing) {
+        this.typing = typing;
     }
 }

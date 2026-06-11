@@ -36,8 +36,37 @@ public class ChatUserAdapter extends RecyclerView.Adapter<ChatUserAdapter.ViewHo
         ChatUser user = userList.get(position);
 
         holder.userName.setText(user.getName());
-        holder.lastMessage.setText(user.getLastMessage());
+        if (user.isTyping()) {
+
+            holder.lastMessage.setText("Typing...");
+            holder.lastMessage.setTextColor(
+                    android.graphics.Color.parseColor("#25D366")
+            );
+
+        } else {
+
+            holder.lastMessage.setText(
+                    user.getLastMessage()
+            );
+
+            holder.lastMessage.setTextColor(
+                    holder.defaultMessageColor
+            );
+        }
         holder.messageTime.setText(user.getTime());
+
+        if (user.getUnreadCount() > 0) {
+
+            holder.unreadCount.setVisibility(View.VISIBLE);
+
+            holder.unreadCount.setText(
+                    String.valueOf(user.getUnreadCount())
+            );
+
+        } else {
+
+            holder.unreadCount.setVisibility(View.GONE);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, ChatActivity.class);
@@ -54,7 +83,8 @@ public class ChatUserAdapter extends RecyclerView.Adapter<ChatUserAdapter.ViewHo
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        TextView userName, lastMessage, messageTime;
+        TextView userName, lastMessage, messageTime, unreadCount;
+        int defaultMessageColor;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -62,6 +92,8 @@ public class ChatUserAdapter extends RecyclerView.Adapter<ChatUserAdapter.ViewHo
             userName = itemView.findViewById(R.id.userName);
             lastMessage = itemView.findViewById(R.id.lastMessage);
             messageTime = itemView.findViewById(R.id.messageTime);
+            unreadCount = itemView.findViewById(R.id.unreadCount);
+            defaultMessageColor = lastMessage.getCurrentTextColor();
         }
     }
 }
