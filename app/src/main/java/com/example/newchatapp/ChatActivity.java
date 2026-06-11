@@ -52,7 +52,22 @@ public class ChatActivity extends AppCompatActivity {
     ImageButton btnAttachment;
     TextView chatUserStatus;
 
+    private boolean isTyping = false;
+    private boolean isReceiverTyping = false;
+    private final android.os.Handler typingHandler =
+            new android.os.Handler();
 
+    private final Runnable stopTypingRunnable = () -> {
+
+        if (mAuth.getUid() == null) return;
+
+        databaseReference.child("typing")
+                .child(mAuth.getUid())
+                .child("isTyping")
+                .setValue(false);
+
+        isTyping = false;
+    };
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +90,55 @@ public class ChatActivity extends AppCompatActivity {
         receiverName = getIntent().getStringExtra("userName");
         receiverUid = getIntent().getStringExtra("userUid");
 
+        messageBox.addTextChangedListener(
+                new android.text.TextWatcher() {
+
+                    @Override
+                    public void beforeTextChanged(
+                            CharSequence s,
+                            int start,
+                            int count,
+                            int after) {
+                    }
+
+                    @Override
+                    public void onTextChanged(
+                            CharSequence s,
+                            int start,
+                            int before,
+                            int count) {
+
+                        if (!isTyping) {
+
+                            databaseReference.child("typing")
+                                    .child(mAuth.getUid())
+                                    .child("isTyping")
+                                    .setValue(true);
+
+                            databaseReference.child("typing")
+                                    .child(mAuth.getUid())
+                                    .child("typingTo")
+                                    .setValue(receiverUid);
+
+                            isTyping = true;
+                        }
+
+                        typingHandler.removeCallbacks(
+                                stopTypingRunnable
+                        );
+
+                        typingHandler.postDelayed(
+                                stopTypingRunnable,
+                                1500
+                        );
+                    }
+
+                    @Override
+                    public void afterTextChanged(
+                            android.text.Editable s) {
+                    }
+                });
+
         if (receiverUid == null) {
             Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show();
             finish();
@@ -82,6 +146,7 @@ public class ChatActivity extends AppCompatActivity {
         }
 
         chatUserName.setText(receiverName);
+        listenTypingStatus();
 
         // REAL-TIME STATUS LISTENER
         statusListener = firestore.collection("users")
@@ -108,12 +173,13 @@ public class ChatActivity extends AppCompatActivity {
                         Boolean isOnline =
                                 value.getBoolean("isOnline");
 
+                        if (isReceiverTyping) {
+                            return;
+                        }
+
                         if (Boolean.TRUE.equals(isOnline)) {
-
                             chatUserStatus.setText("Online");
-
                         } else {
-
                             Long lastSeen =
                                     value.getLong("lastSeen");
 
@@ -217,7 +283,112 @@ public class ChatActivity extends AppCompatActivity {
                     .setValue(System.currentTimeMillis());
 
             messageBox.setText("");
+
+            databaseReference.child("typing")
+                    .child(mAuth.getUid())
+                    .child("isTyping")
+                    .setValue(false);
+
+            isTyping = false;
         });
+    }
+
+    private void listenTypingStatus() {
+
+        databaseReference.child("typing")
+                .child(receiverUid)
+                .addValueEventListener(
+                        new ValueEventListener() {
+
+                            @Override
+                            public void onDataChange(
+                                    @NonNull DataSnapshot snapshot) {
+
+                                Boolean typing =
+                                        snapshot.child("isTyping")
+                                                .getValue(Boolean.class);
+
+                                String typingTo =
+                                        snapshot.child("typingTo")
+                                                .getValue(String.class);
+
+                                if (Boolean.TRUE.equals(typing)
+                                        && typingTo != null
+                                        && typingTo.equals(mAuth.getUid())) {
+
+                                    isReceiverTyping = true;
+                                    chatUserStatus.setText("Typing...");
+
+                                } else {
+
+                                    isReceiverTyping = false;
+
+                                    firestore.collection("users")
+                                            .document(receiverUid)
+                                            .get()
+                                            .addOnSuccessListener(value -> {
+
+                                                if (value == null
+                                                        || !value.exists()) {
+
+                                                    chatUserStatus.setText(
+                                                            "Offline"
+                                                    );
+                                                    return;
+                                                }
+
+                                                Boolean isOnline =
+                                                        value.getBoolean(
+                                                                "isOnline"
+                                                        );
+
+                                                if (Boolean.TRUE.equals(isOnline)) {
+
+                                                    chatUserStatus.setText(
+                                                            "Online"
+                                                    );
+
+                                                } else {
+
+                                                    Long lastSeen =
+                                                            value.getLong(
+                                                                    "lastSeen"
+                                                            );
+
+                                                    if (lastSeen != null) {
+
+                                                        String time =
+                                                                android.text
+                                                                        .format
+                                                                        .DateFormat
+                                                                        .format(
+                                                                                "hh:mm a",
+                                                                                lastSeen
+                                                                        )
+                                                                        .toString();
+
+                                                        chatUserStatus.setText(
+                                                                "Last seen "
+                                                                        + time
+                                                        );
+
+                                                    } else {
+
+                                                        chatUserStatus.setText(
+                                                                "Offline"
+                                                        );
+                                                    }
+                                                }
+                                            });
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(
+                                    @NonNull DatabaseError error) {
+
+                            }
+                        });
     }
 
     @Override
@@ -235,17 +406,22 @@ public class ChatActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        String uid = mAuth.getUid();
+        // User stopped typing
+        if (mAuth.getUid() != null) {
 
-        if (uid != null) {
-
-            firestore.collection("users")
-                    .document(uid)
-                    .update(
-                            "isOnline", false,
-                            "lastSeen", System.currentTimeMillis()
-                    );
+            databaseReference.child("typing")
+                    .child(mAuth.getUid())
+                    .child("isTyping")
+                    .setValue(false);
         }
+
+        // Your existing offline logic
+        firestore.collection("users")
+                .document(mAuth.getUid())
+                .update(
+                        "isOnline", false,
+                        "lastSeen", System.currentTimeMillis()
+                );
     }
 
     @Override
