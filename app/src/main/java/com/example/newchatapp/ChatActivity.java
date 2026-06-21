@@ -2,8 +2,10 @@
 
     import android.content.Intent;
     import android.os.Bundle;
+    import android.view.View;
     import android.widget.Button;
     import android.widget.EditText;
+    import android.widget.LinearLayout;
     import android.widget.TextView;
     import android.widget.ImageButton;
     import android.widget.ImageView;
@@ -51,7 +53,12 @@
         ImageView profileImage;
         ImageButton btnAttachment;
         TextView chatUserStatus;
+        LinearLayout replyLayout;
+        TextView replySenderName;
+        TextView replyMessage;
+        ImageButton btnCancelReply;
 
+        private Message replyingMessage = null;
         private boolean isTyping = false;
         private boolean isReceiverTyping = false;
         private final android.os.Handler typingHandler =
@@ -87,6 +94,11 @@
             profileImage = findViewById(R.id.profileImage);
             btnAttachment = findViewById(R.id.btnAttachment);
             chatUserStatus = findViewById(R.id.chatUserStatus);
+
+            replyLayout = findViewById(R.id.replyLayout);
+            replySenderName = findViewById(R.id.replySenderName);
+            replyMessage = findViewById(R.id.replyMessage);
+            btnCancelReply = findViewById(R.id.btnCancelReply);
 
             mAuth = FirebaseAuth.getInstance();
             databaseReference = FirebaseDatabase.getInstance().getReference();
@@ -242,6 +254,13 @@
                 Toast.makeText(ChatActivity.this, "Media sharing coming soon", Toast.LENGTH_SHORT).show();
             });
 
+            btnCancelReply.setOnClickListener(v -> {
+
+                replyingMessage = null;
+
+                replyLayout.setVisibility(View.GONE);
+
+            });
 
             // 🔥 SEND MESSAGE
             sendBtn.setOnClickListener(v -> {
@@ -256,6 +275,40 @@
                         senderUid,
                         System.currentTimeMillis()
                 );
+
+                message.setMessageId(messageId);
+
+                // =====================
+                // Reply Message
+                // =====================
+
+                if (replyingMessage != null) {
+
+                    message.setReply(true);
+
+                    message.setReplyMessageId(
+                            replyingMessage.getMessageId()
+                    );
+
+                    message.setReplyMessage(
+                            replyingMessage.getMessage()
+                    );
+
+                    message.setReplySenderId(
+                            replyingMessage.getSenderId()
+                    );
+
+                    if (replyingMessage.getSenderId().equals(senderUid)) {
+
+                        message.setReplySenderName("You");
+
+                    } else {
+
+                        message.setReplySenderName(receiverName);
+
+                    }
+
+                }
 
                 // sender
                 databaseReference.child("chats")
@@ -312,6 +365,9 @@
                         });
 
                 messageBox.setText("");
+
+                replyingMessage = null;
+                replyLayout.setVisibility(View.GONE);
 
                 databaseReference.child("typing")
                         .child(mAuth.getUid())
@@ -623,6 +679,7 @@
             if (message.getSenderId().equals(mAuth.getUid())) {
 
                 options = new String[]{
+                        "Reply",
                         "Copy",
                         "Info",
                         "Delete for Me",
@@ -632,6 +689,7 @@
             } else {
 
                 options = new String[]{
+                        "Reply",
                         "Copy",
                         "Delete for Me"
                 };
@@ -646,20 +704,22 @@
                             switch (which) {
 
                                 case 0:
-                                    copyMessage(message);
+                                    startReply(message);
                                     break;
 
                                 case 1:
-                                    Intent intent = getIntent(message);
-
-                                    startActivity(intent);
+                                    copyMessage(message);
                                     break;
 
                                 case 2:
-                                    deleteForMe(message);
+                                    startActivity(getIntent(message));
                                     break;
 
                                 case 3:
+                                    deleteForMe(message);
+                                    break;
+
+                                case 4:
                                     deleteForEveryone(message);
                                     break;
                             }
@@ -669,10 +729,14 @@
                             switch (which) {
 
                                 case 0:
-                                    copyMessage(message);
+                                    startReply(message);
                                     break;
 
                                 case 1:
+                                    copyMessage(message);
+                                    break;
+
+                                case 2:
                                     deleteForMe(message);
                                     break;
                             }
@@ -708,6 +772,25 @@
                     message.getSeenTime()
             );
             return intent;
+        }
+
+        private void startReply(Message message) {
+
+            replyingMessage = message;
+
+            replyLayout.setVisibility(View.VISIBLE);
+
+            if (message.getSenderId().equals(mAuth.getUid())) {
+
+                replySenderName.setText("You");
+
+            } else {
+
+                replySenderName.setText(receiverName);
+
+            }
+
+            replyMessage.setText(message.getMessage());
         }
 
         private void copyMessage(Message message) {

@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -89,6 +90,28 @@ public class MessageAdapter extends RecyclerView.Adapter {
                 viewHolder.sentMessage.setText(
                         message.getMessage()
                 );
+
+                viewHolder.messageTime.setText(
+                        formatTime(message.getTimestamp())
+                );
+
+                if (message.isReply()) {
+
+                    viewHolder.replyContainer.setVisibility(View.VISIBLE);
+
+                    viewHolder.replySender.setText(
+                            message.getReplySenderName()
+                    );
+
+                    viewHolder.replyText.setText(
+                            message.getReplyMessage()
+                    );
+
+                } else {
+
+                    viewHolder.replyContainer.setVisibility(View.GONE);
+
+                }
             }
 
             holder.itemView.setOnLongClickListener(v -> {
@@ -102,11 +125,22 @@ public class MessageAdapter extends RecyclerView.Adapter {
 
             // ✓ / ✓✓ logic
             if (message.isSeen()) {
-                viewHolder.messageStatus.setText("✓✓"); // seen
+                viewHolder.messageStatus.setText("✓✓");
+                viewHolder.messageStatus.setTextColor(
+                        android.graphics.Color.parseColor("#34B7F1")
+                );
+
             } else if (message.isDelivered()) {
-                viewHolder.messageStatus.setText("✓✓"); // delivered
+                viewHolder.messageStatus.setText("✓✓");
+                viewHolder.messageStatus.setTextColor(
+                        android.graphics.Color.GRAY
+                );
+
             } else {
-                viewHolder.messageStatus.setText("✓"); // sent
+                viewHolder.messageStatus.setText("✓");
+                viewHolder.messageStatus.setTextColor(
+                        android.graphics.Color.GRAY
+                );
             }
 
         }
@@ -127,6 +161,36 @@ public class MessageAdapter extends RecyclerView.Adapter {
                 viewHolder.receivedMessage.setText(
                         message.getMessage()
                 );
+
+                viewHolder.messageTime.setText(
+                        formatTime(message.getTimestamp())
+                );
+
+                if (message.isReply()) {
+
+                    viewHolder.replyContainer.setVisibility(View.VISIBLE);
+
+                    if (FirebaseAuth.getInstance().getUid()
+                            .equals(message.getReplySenderId())) {
+
+                        viewHolder.replySender.setText("You");
+
+                    } else {
+
+                        viewHolder.replySender.setText(
+                                message.getReplySenderName()
+                        );
+                    }
+
+                    viewHolder.replyText.setText(
+                            message.getReplyMessage()
+                    );
+
+                } else {
+
+                    viewHolder.replyContainer.setVisibility(View.GONE);
+
+                }
             }
 
             holder.itemView.setOnLongClickListener(v -> {
@@ -145,17 +209,39 @@ public class MessageAdapter extends RecyclerView.Adapter {
         return messageList.size();
     }
 
+    private String formatTime(long timestamp) {
+
+        java.text.SimpleDateFormat sdf =
+                new java.text.SimpleDateFormat(
+                        "hh:mm a",
+                        java.util.Locale.getDefault()
+                );
+
+        return sdf.format(
+                new java.util.Date(timestamp)
+        );
+    }
+
     // SENT VIEW HOLDER
     public class SentViewHolder extends RecyclerView.ViewHolder {
 
         TextView sentMessage;
         TextView messageStatus;
+        TextView messageTime;
 
+        LinearLayout replyContainer;
+        TextView replySender;
+        TextView replyText;
         public SentViewHolder(@NonNull View itemView) {
             super(itemView);
 
             sentMessage = itemView.findViewById(R.id.sentMessage);
             messageStatus = itemView.findViewById(R.id.messageStatus);
+            replyContainer = itemView.findViewById(R.id.replyContainer);
+            replySender = itemView.findViewById(R.id.replySender);
+            replyText = itemView.findViewById(R.id.replyText);
+            messageTime =
+                    itemView.findViewById(R.id.messageTime);
         }
     }
 
@@ -163,12 +249,29 @@ public class MessageAdapter extends RecyclerView.Adapter {
     public class ReceiverViewHolder extends RecyclerView.ViewHolder {
 
         TextView receivedMessage;
+        TextView messageTime;
+
+        LinearLayout replyContainer;
+        TextView replySender;
+        TextView replyText;
 
         public ReceiverViewHolder(@NonNull View itemView) {
             super(itemView);
 
             receivedMessage =
                     itemView.findViewById(R.id.receivedMessageText);
+
+            replyContainer =
+                    itemView.findViewById(R.id.replyContainer);
+
+            replySender =
+                    itemView.findViewById(R.id.replySender);
+
+            replyText =
+                    itemView.findViewById(R.id.replyText);
+
+            messageTime =
+                    itemView.findViewById(R.id.messageTime);
         }
     }
 }
